@@ -1,6 +1,5 @@
-# pursuitcurves
+# Pursuit Curves
 
-Predator chasing after prey (2d or 3d).
+Pursuit Curves are an example of a differential game: a prey evades a predator in an unbounded domain (R^2 or R^3), following a differential strategy. We study a form of the pursuit problem with an agile prey and fast predator. The predator follows a pursuit strategy, accelerating towards the prey, winning if it gets close enough. The prey wins if it survives for long enough; losing if the predator gets too close. Both accelerate uniformly with their acceleration, up to reaching top speed, at which point acceleration becomes zero.
 
-The predator is always accelerating in a straight line towards the prey, whereas the prey is able to turn away from the predator. The prey is more agile (faster accelaration) but the predator has a higher top speed. The question is how do acceleration and speed imbalances between the two affect the probability of death. 
-We can consider different: 'reaction radius' values
+The investigation involves fixing: starting points (x(0) - y(0) >> 1 ), prey top speed x'_max and prey acceleration x''. We then study the behavior of the system using the following statistics: time to reach, minimum distance between the two, average distance, spread of the trajectory - as a function of the predator's acceleration and top speed. The study is deterministic, though we see to find chaotic behavior: there are different strategies for the prey, the simplest being a dash to the right or left.
