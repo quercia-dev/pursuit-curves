@@ -1,2 +1,8 @@
-venv
-.DS_Store
+*
+
+!.gitignore
+!**.ipynb
+!**.md
+!**.txt
+!**.yml
+!**.py
