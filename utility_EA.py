@@ -34,33 +34,17 @@ def normalize(v):
     return v / length
 
 @njit
+def cross_product_2d(v1, v2):
+    """Compute the z-component of the cross product of two 2D vectors"""
+    return v1[0] * v2[1] - v1[1] * v2[0]
+
+@njit
 def rotate_right_90(v):
     """Rotate a 2D vector 90 degrees to the right (clockwise)."""
     return np.array([v[1], -v[0]])
 
 @njit
 def get_trajectory(deg: float, n_steps: int, prey_speed_max: float):
-    """
-    Initialize a trajectory state array for a 2D predator-prey simulation.
-
-    The state array has shape (n_steps, 2 agents, 3 features, 2 dimensions), where:
-    - time: t in {0, ..., n_steps - 1}
-    - agents: 0 = predator, 1 = prey
-    - features: 0 = position, 1 = velocity, 2 = acceleration
-    - dimensions: 2D (x, y)
-
-    Predator starts at origin with zero velocity and acceleration.
-    Prey starts at position (1, 0) and moves in a direction specified by `deg` at max speed.
-    Acceleration is initialized to zero for both agents.
-
-    Args:
-        deg (float): Direction angle (in degrees) of prey's initial velocity.
-        params (dict): Dictionary containing simulation parameters including 'n_steps' and '11_max' (prey's max speed).
-
-    Returns:
-        np.ndarray: Initialized state array.
-    """
-    
     state = np.zeros((n_steps, 2, 3, 2), dtype=float)
 
     # initial predator pos, vel, acc
@@ -102,10 +86,10 @@ def step(state, t, dt, pred_speed_max, prey_speed_max):
     return state
 
 def simulate(state, params):
-    return simul(state, params["dt"], params["R_kill"], params["R_react"], params["pred_acc"], params["prey_acc"], params["pred_speed_max"], params["prey_speed_max"])
+    return simul(state, params["dt"], params["R_kill"], params["R_react"], params["pred_acc"], params["prey_acc"], params["pred_speed_max"], params["prey_speed_max"], params["pred_acc_max"], params["prey_acc_max"], params['navigation_gain'])
 
 @njit
-def simul(state, dt, r_kill, r_react, pred_acc, prey_acc, pred_speed_max, prey_speed_max):
+def simul(state, dt, r_kill, r_react, pred_acc, prey_acc, pred_speed_max, prey_speed_max, pred_acc_max, prey_acc_max, navigation_gain):
     """
     Run the simulation and return the final state tensor.
     state: (n_steps, 2 agents, 3 features, 2 dims)
@@ -114,19 +98,39 @@ def simul(state, dt, r_kill, r_react, pred_acc, prey_acc, pred_speed_max, prey_s
     n_steps = state.shape[0]
 
     for t in range(1, n_steps):
-        direction = state[t-1, 1, 0] - state[t-1, 0, 0]
-        distance = norm(direction)
+        pred_pos = state[t-1, 0, 0, :]  # Predator position
+        pred_vel = state[t-1, 0, 1, :]  # Predator velocity
+        prey_pos = state[t-1, 1, 0, :]  # Prey position
+        prey_vel = state[t-1, 1, 1, :]  # Prey velocity
+
+        r_vec = prey_pos - pred_pos # line of sight (LOS)
+        v_rel = prey_vel - pred_vel # relative velocity
+
+        distance = norm(r_vec)
 
         if distance < r_kill:
-            return state, t            
-        elif distance < r_react:
-            # Prey reacts: rotate predator-prey vector 90° right
-            state[t-1, 1, 2, :] = normalize(rotate_right_90(direction)) * prey_acc
+            return state, t
+        
+        pred_acc_vec = proportional_navigation_acceleration(r_vec, v_rel, navigation_gain)
 
-        # Predator always steers toward prey
-        state[t-1, 0, 2, :] = normalize(direction) * pred_acc
+        pred_acc_norm = norm(pred_acc_vec)
+        if pred_acc_norm > pred_acc_max:
+            pred_acc_vec = pred_acc_vec * (pred_acc_max / pred_acc_norm)
 
-        # Step positions and velocities
+        prey_acc_vec = np.zeros(2)
+        if distance < r_react:
+            # Normalize the line-of-sight vector
+            if distance > 1e-10:
+                r_unit = r_vec / distance
+                # Calculate perpendicular direction (90 degrees clockwise)
+                escape_dir = np.array([-r_unit[1], r_unit[0]])
+                prey_acc_vec = escape_dir * prey_acc_max
+
+        # Store accelerations
+        state[t-1, 0, 2, :] = pred_acc_vec
+        state[t-1, 1, 2, :] = prey_acc_vec
+
+        # Update step
         step(state, t, dt, pred_speed_max, prey_speed_max)
 
     return state, n_steps    
@@ -217,3 +221,36 @@ def run_simulation(predator_genome, prey_genome, simulation_params):
     result.params = params
     
     return result
+
+@njit
+def proportional_navigation_acceleration(r_vec, v_rel, navigation_gain):
+    # Calculate distance and normalized LOS vector
+    distance = np.sqrt(r_vec[0]**2 + r_vec[1]**2)
+    
+    # Avoid division by zero
+    if distance < 1e-10:
+        return np.zeros(2)
+    
+    # LOS unit vector
+    r_unit_x = r_vec[0] / distance
+    r_unit_y = r_vec[1] / distance
+    
+    # Calculate closing velocity (projection of v_rel along LOS)
+    v_closing = r_unit_x * v_rel[0] + r_unit_y * v_rel[1]
+    
+    # Calculate LOS rotation rate (omega)
+    cross_product = r_vec[0] * v_rel[1] - r_vec[1] * v_rel[0]
+    omega = cross_product / (distance * distance)
+    
+    # Calculate perpendicular unit vector to LOS
+    perp_unit_x = -r_unit_y
+    perp_unit_y = r_unit_x
+    
+    # Calculate acceleration magnitude
+    acc_magnitude = navigation_gain * v_closing * omega
+    
+    # Calculate acceleration vector
+    acc_x = perp_unit_x * acc_magnitude
+    acc_y = perp_unit_y * acc_magnitude
+    
+    return np.array([acc_x, acc_y])
