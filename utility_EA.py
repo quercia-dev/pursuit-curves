@@ -57,8 +57,8 @@ def get_trajectory(n_steps: int, prey_speed_max: float, pred_speed_max: float):
     state[0, 0, 2] = [0, 0] 
 
     # initial prey pos, vel, acc
-    state[0, 1, 0] = [10, 0]
-    state[0, 1, 1] = [prey_speed_max, 0]
+    state[0, 1, 0] = [25, 0]
+    state[0, 1, 1] = [0, prey_speed_max]
     state[0, 1, 2] = [0, 0] 
     
     return state
@@ -122,11 +122,11 @@ def simul(state, dt, r_kill, r_react, pred_speed_max, prey_speed_max,
         if pred_acc_norm > pred_acc_max:
             pred_acc_vec = pred_acc_vec * (pred_acc_max / pred_acc_norm)
 
-        prey_acc_vec = np.zeros(2)
+        prey_rotate_acc = np.zeros(2)
         if distance < r_react:
             if not (prey_acc_max > 0):
                 print('zero prey_acc_max')
-            prey_rotate_acc = normalize(rotate_vector(r_vec, evasion_angle)) * prey_acc_max
+            prey_rotate_acc = normalize(rotate_vector(prey_vel, evasion_angle)) * prey_acc_max
             
         
         pred_nav_acc = proportional_navigation_acceleration(r_vec, v_rel, navigation_gain)
@@ -208,16 +208,11 @@ def run_simulation(predator_genome, prey_genome, simulation_params):
     """
     # Set up simulation parameters from genomes
     params = simulation_params.copy()
-    params['pred_speed_max'] = predator_genome.max_speed
-    params['prey_speed_max'] = prey_genome.max_speed
-    params['pred_acc'] = predator_genome.max_acceleration
-    params['prey_acc'] = prey_genome.max_acceleration
     params['R_react'] = prey_genome.react_radius
     params['evasion_angle'] = prey_genome.evasion_angle
     params['navigation_gain'] = predator_genome.navigation_gain
     
     initial_state = get_trajectory(
-        deg=prey_genome.evasion_angle * 180 / np.pi,  # Convert to degrees
         n_steps=params['n_steps'],
         prey_speed_max=params['prey_speed_max'],
         pred_speed_max=params['pred_speed_max']
