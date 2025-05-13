@@ -145,7 +145,7 @@ def simul(state, dt, r_kill, r_react, pred_speed_max, prey_speed_max,
     return state, n_steps    
 
 
-def visualize_evolution(prey_fitness_history, pred_fitness_history):
+def visualize_evolution(prey_fitness_history):
     """
     Visualize the evolutionary progress of prey and predator populations
     """
@@ -154,7 +154,6 @@ def visualize_evolution(prey_fitness_history, pred_fitness_history):
     generations = range(1, len(prey_fitness_history) + 1)
     
     plt.plot(generations, prey_fitness_history, 'b-', label='Best Prey Fitness')
-    plt.plot(generations, pred_fitness_history, 'r-', label='Best Predator Fitness')
     
     plt.xlabel('Generation')
     plt.ylabel('Fitness')
@@ -165,11 +164,11 @@ def visualize_evolution(prey_fitness_history, pred_fitness_history):
     plt.tight_layout()
     plt.show()
 
-def visualize_best_simulation(best_predator, best_prey, simulation_params):
+def visualize_best_simulation(fixed_predator, best_prey, simulation_params):
     """
     Visualize a simulation using the best predator and prey
     """
-    sim_result = run_simulation(best_predator, best_prey, simulation_params)
+    sim_result = run_simulation(fixed_predator, best_prey, simulation_params)
     
     # Plotting setup
     plt.figure(figsize=(10, 10))
