@@ -34,29 +34,33 @@ def normalize(v):
     return v / length
 
 @njit
-def cross_product_2d(v1, v2):
-    """Compute the z-component of the cross product of two 2D vectors"""
-    return v1[0] * v2[1] - v1[1] * v2[0]
+def cross2d(a, b):
+    return a[0] * b[1] - a[1] * b[0]
 
 @njit
-def rotate_right_90(v):
-    """Rotate a 2D vector 90 degrees to the right (clockwise)."""
-    return np.array([v[1], -v[0]])
+def rotate_vector(v, angle_rad):
+    """Rotate a 2D vector by specified angle in radians."""
+    cos_theta = np.cos(angle_rad)
+    sin_theta = np.sin(angle_rad)
+    return np.array([
+        v[0] * cos_theta - v[1] * sin_theta,
+        v[0] * sin_theta + v[1] * cos_theta
+    ])
 
 @njit
-def get_trajectory(deg: float, n_steps: int, prey_speed_max: float):
+def get_trajectory(n_steps: int, prey_speed_max: float, pred_speed_max: float):
     state = np.zeros((n_steps, 2, 3, 2), dtype=float)
 
     # initial predator pos, vel, acc
     state[0, 0, 0] = [0, 0] 
-    state[0, 0, 1] = [0, 0] 
+    state[0, 0, 1] = [pred_speed_max, 0] 
     state[0, 0, 2] = [0, 0] 
 
     rad = np.deg2rad(deg) 
 
     # initial prey pos, vel, acc
-    state[0, 1, 0] = [1, 0]
-    state[0, 1, 1] = [np.sin(rad) * prey_speed_max, np.cos(rad) * prey_speed_max]
+    state[0, 1, 0] = [10, 0]
+    state[0, 1, 1] = [prey_speed_max, 0]
     state[0, 1, 2] = [0, 0] 
     
     return state
@@ -86,10 +90,13 @@ def step(state, t, dt, pred_speed_max, prey_speed_max):
     return state
 
 def simulate(state, params):
-    return simul(state, params["dt"], params["R_kill"], params["R_react"], params["pred_acc"], params["prey_acc"], params["pred_speed_max"], params["prey_speed_max"], params["pred_acc_max"], params["prey_acc_max"], params['navigation_gain'])
+    return simul(state, params["dt"], params["R_kill"], params["R_react"], params["pred_speed_max"],
+                params["prey_speed_max"], params["pred_acc_max"], params["prey_acc_max"],
+                params['navigation_gain'], params['evasion_angle'])
 
 @njit
-def simul(state, dt, r_kill, r_react, pred_acc, prey_acc, pred_speed_max, prey_speed_max, pred_acc_max, prey_acc_max, navigation_gain):
+def simul(state, dt, r_kill, r_react, pred_speed_max, prey_speed_max,
+           pred_acc_max, prey_acc_max, navigation_gain, evasion_angle):
     """
     Run the simulation and return the final state tensor.
     state: (n_steps, 2 agents, 3 features, 2 dims)
@@ -119,16 +126,20 @@ def simul(state, dt, r_kill, r_react, pred_acc, prey_acc, pred_speed_max, prey_s
 
         prey_acc_vec = np.zeros(2)
         if distance < r_react:
-            # Normalize the line-of-sight vector
-            if distance > 1e-10:
-                r_unit = r_vec / distance
-                # Calculate perpendicular direction (90 degrees clockwise)
-                escape_dir = np.array([-r_unit[1], r_unit[0]])
-                prey_acc_vec = escape_dir * prey_acc_max
+            if not (prey_acc_max > 0):
+                print('zero prey_acc_max')
+            prey_rotate_acc = normalize(rotate_vector(r_vec, evasion_angle)) * prey_acc_max
+            
+        
+        pred_nav_acc = proportional_navigation_acceleration(r_vec, v_rel, navigation_gain)
+
+        #pred_acc_norm = norm(pred_nav_acc)
+        #if pred_acc_norm > pred_acc_max:
+        #    pred_acc_vec = pred_nav_acc * (pred_acc_max / pred_acc_norm)
 
         # Store accelerations
-        state[t-1, 0, 2, :] = pred_acc_vec
-        state[t-1, 1, 2, :] = prey_acc_vec
+        state[t-1, 0, 2, :] = pred_nav_acc
+        state[t-1, 1, 2, :] = prey_rotate_acc
 
         # Update step
         step(state, t, dt, pred_speed_max, prey_speed_max)
@@ -204,11 +215,14 @@ def run_simulation(predator_genome, prey_genome, simulation_params):
     params['pred_acc'] = predator_genome.max_acceleration
     params['prey_acc'] = prey_genome.max_acceleration
     params['R_react'] = prey_genome.react_radius
+    params['evasion_angle'] = prey_genome.evasion_angle
+    params['navigation_gain'] = predator_genome.navigation_gain
     
     initial_state = get_trajectory(
         deg=prey_genome.evasion_angle * 180 / np.pi,  # Convert to degrees
         n_steps=params['n_steps'],
-        prey_speed_max=params['prey_speed_max']
+        prey_speed_max=params['prey_speed_max'],
+        pred_speed_max=params['pred_speed_max']
     )
     
     final_state, steps_until_capture = simulate(initial_state, params)
@@ -224,33 +238,21 @@ def run_simulation(predator_genome, prey_genome, simulation_params):
 
 @njit
 def proportional_navigation_acceleration(r_vec, v_rel, navigation_gain):
-    # Calculate distance and normalized LOS vector
-    distance = np.sqrt(r_vec[0]**2 + r_vec[1]**2)
+
+    dist = norm(r_vec)
     
-    # Avoid division by zero
-    if distance < 1e-10:
-        return np.zeros(2)
+    # Normalized line of sight vector
+    los_unit = r_vec / dist
     
-    # LOS unit vector
-    r_unit_x = r_vec[0] / distance
-    r_unit_y = r_vec[1] / distance
+    # Cross product to get line of sight rotation rate
+    los_rate = cross2d(r_vec, v_rel) / (dist ** 2)
+
+    # Rotate los unit
+    los_perp = np.array([-los_unit[1], los_unit[0]])
     
-    # Calculate closing velocity (projection of v_rel along LOS)
-    v_closing = r_unit_x * v_rel[0] + r_unit_y * v_rel[1]
+    # Proportional navigation acceleration
+    acc_mag = navigation_gain * los_rate * norm(v_rel)
+
+    acceleration = acc_mag * los_perp
     
-    # Calculate LOS rotation rate (omega)
-    cross_product = r_vec[0] * v_rel[1] - r_vec[1] * v_rel[0]
-    omega = cross_product / (distance * distance)
-    
-    # Calculate perpendicular unit vector to LOS
-    perp_unit_x = -r_unit_y
-    perp_unit_y = r_unit_x
-    
-    # Calculate acceleration magnitude
-    acc_magnitude = navigation_gain * v_closing * omega
-    
-    # Calculate acceleration vector
-    acc_x = perp_unit_x * acc_magnitude
-    acc_y = perp_unit_y * acc_magnitude
-    
-    return np.array([acc_x, acc_y])
+    return acceleration
