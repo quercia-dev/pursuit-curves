@@ -56,8 +56,6 @@ def get_trajectory(n_steps: int, prey_speed_max: float, pred_speed_max: float):
     state[0, 0, 1] = [pred_speed_max, 0] 
     state[0, 0, 2] = [0, 0] 
 
-    rad = np.deg2rad(deg) 
-
     # initial prey pos, vel, acc
     state[0, 1, 0] = [10, 0]
     state[0, 1, 1] = [prey_speed_max, 0]
