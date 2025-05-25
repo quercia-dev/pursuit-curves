@@ -18,7 +18,10 @@ prey_spec = [
     ('alive', boolean),
     ('boundary_x', float64),
     ('boundary_y', float64),
-    ('time_since_evasion', float64)
+    ('time_since_evasion', float64),
+    ('zigzag_direction', float64),
+    ('base_flee_angle', float64),
+    ('evasion_active', boolean),
 ]
 
 predator_spec = [
@@ -34,7 +37,7 @@ predator_spec = [
 
 @jitclass(prey_spec)
 class Prey:
-    def __init__(self, x, y, max_speed=3.0, react_radius=15.0, evasion_angle=np.pi/2, evasion_time=1.0, boundary_x=100.0, boundary_y=100.0):
+    def __init__(self, x, y, max_speed=3.0, react_radius=15.0, evasion_angle=np.pi/3, evasion_time=3.0, boundary_x=100.0, boundary_y=100.0):
         self.x = x
         self.y = y
         self.vx = 0.0
@@ -46,6 +49,10 @@ class Prey:
         self.alive = True
         self.boundary_x = boundary_x
         self.boundary_y = boundary_y
+        self.time_since_evasion = 0.0
+        self.zigzag_direction = 1.0 
+        self.base_flee_angle = 0.0
+        self.evasion_active = False
     
     def update(self, predator_x, predator_y, dt=0.1):
         if not self.alive:
@@ -59,26 +66,51 @@ class Prey:
         self.time_since_evasion += dt
         
         if distance < self.react_radius and distance > 0:
-            # Flee behavior - move away from predator
+            self.evasion_active = True
+
+            # calculate base flee angle
+            self.base_flee_angle = np.arctan2(dy, dx)
+
+            #check if it's time to evade
             if self.time_since_evasion >= self.evasion_time:
-                #Evasion
-                evasion_vx = np.cos(self.evasion_angle)
-                evasion_vy = np.sin(self.evasion_angle)
-                self.vx += evasion_vx * self.max_speed
-                self.vy += evasion_vy * self.max_speed
+                self.zigzag_direction *= -1.0
+
+            # Calculate zigzag angle
+                zigzag_angle = self.base_flee_angle + (self.zigzag_direction * self.evasion_angle)
+                
+                # Calculate desired velocity direction (maintain speed, change direction)
+                target_vx = np.cos(zigzag_angle) * self.max_speed
+                target_vy = np.sin(zigzag_angle) * self.max_speed
+                
+                # Apply steering force (don't just set velocity, blend it)
+                steering_strength = 8.0  # How aggressively to change direction
+                self.vx += (target_vx - self.vx) * steering_strength * dt
+                self.vy += (target_vy - self.vy) * steering_strength * dt
+                
                 self.time_since_evasion = 0.0
             else:
-                # Continue current movement
-                self.vx *= 0.95
-                self.vy *= 0.95
+                # Continue current evasion direction with slight course correction
+                current_angle = self.base_flee_angle + (self.zigzag_direction * self.evasion_angle)
+                target_vx = np.cos(current_angle) * self.max_speed
+                target_vy = np.sin(current_angle) * self.max_speed
+                
+                # Gentle steering to maintain zigzag course
+                steering_strength = 2.0
+                self.vx += (target_vx - self.vx) * steering_strength * dt
+                self.vy += (target_vy - self.vy) * steering_strength * dt
         else:
-            # Random wandering when not threatened
+            self.evasion_active = False
+            # Random wandering when not threatened (but maintain some momentum)
             self.vx += (np.random.random() - 0.5) * 0.5
             self.vy += (np.random.random() - 0.5) * 0.5
+            
+            # Reset zigzag state when not evading
+            self.time_since_evasion = self.evasion_time  # Ready for immediate evasion
         
         # Apply drag
-        self.vx *= 0.95
-        self.vy *= 0.95
+        drag_factor = 0.98 if self.evasion_active else 0.95
+        self.vx *= drag_factor
+        self.vy *= drag_factor
         
         # Limit speed
         speed = np.sqrt(self.vx*self.vx + self.vy*self.vy)
@@ -94,15 +126,19 @@ class Prey:
         if self.x < 0 or self.x > self.boundary_x:
             self.vx *= -0.8
             self.x = max(0, min(self.boundary_x, self.x))
+            # Flip zigzag direction on boundary collision for more chaos
+            self.zigzag_direction *= -1.0
         
         if self.y < 0 or self.y > self.boundary_y:
             self.vy *= -0.8
             self.y = max(0, min(self.boundary_y, self.y))
+            # Flip zigzag direction on boundary collision for more chaos
+            self.zigzag_direction *= -1.0
 
 
 @jitclass(predator_spec)
 class Predator:
-    def __init__(self, x, y, max_speed=2.5, catch_radius=5.0, boundary_x=100.0, boundary_y=100.0):
+    def __init__(self, x, y, max_speed=2.0, catch_radius=2.5, boundary_x=100.0, boundary_y=100.0):
         self.x = x
         self.y = y
         self.vx = 0.0
@@ -120,13 +156,13 @@ class Predator:
         
         if distance > 0:
             # Pursue the prey
-            pursuit_strength = 3.0
+            pursuit_strength = 4.0
             self.vx += (dx / distance) * pursuit_strength
             self.vy += (dy / distance) * pursuit_strength
         
         # Apply drag
-        self.vx *= 0.9
-        self.vy *= 0.9
+        self.vx *= 0.6
+        self.vy *= 0.6
         
         # Limit speed
         speed = np.sqrt(self.vx*self.vx + self.vy*self.vy)
@@ -164,15 +200,15 @@ class PredatorPreyGame:
         # Initialize prey and predator at random positions
         if prey_genome is None:
             self.prey = Prey(
-                x=50,
-                y=50,
+                x=30,
+                y=30,
                 boundary_x=width,
                 boundary_y=height
             )
         else:
             self.prey = Prey(
-                x=50,
-                y=50,
+                x=30,
+                y=30,
                 max_speed = 3.0,
                 react_radius = prey_genome.react_radius,
                 evasion_angle = prey_genome.evasion_angle,
@@ -191,11 +227,12 @@ class PredatorPreyGame:
         self.game_over = False
         self.catch_time = None
         self.time_elapsed = 0
+        self.initial_prey_position = (self.prey.x, self.prey.y)
         
         # For visualization
         self.prey_trail = [(self.prey.x, self.prey.y)]
         self.predator_trail = [(self.predator.x, self.predator.y)]
-        self.max_trail_length = float('inf')
+        self.max_trail_length = 200
     
     def update(self, dt=0.1):
         if self.game_over:
@@ -244,6 +281,9 @@ class PredatorPreyGame:
         self.time_elapsed = 0
         self.prey_trail = [(self.prey.x, self.prey.y)]
         self.predator_trail = [(self.predator.x, self.predator.y)]
+
+    def get_survival_time(self):
+        return self.catch_time if self.catch_time else self.time_elapsed
 
 
 def visualize_game():
@@ -304,15 +344,20 @@ def visualize_game():
             status_text.set_text(f'CAUGHT! Time: {game.catch_time:.1f}s\nPress R to reset')
             # Auto-reset after 3 seconds
             if game.time_elapsed - game.catch_time > 3.0:
-                game.reset()
+                game.reset(prey_genome)
         else:
             distance = calculate_distance(game.prey.x, game.prey.y, 
                                         game.predator.x, game.predator.y)
+            zigzag_status = "EVADING" if game.prey.evasion_active else "wandering"
+            zigzag_dir = "LEFT" if game.prey.zigzag_direction < 0 else "RIGHT"
+            
             status_text.set_text(f'Time: {game.time_elapsed:.1f}s\n'
                                f'Distance: {distance:.1f}\n'
-                               f'Prey Speed: {np.sqrt(game.prey.vx**2 + game.prey.vy**2):.1f}\n'
-                               f'Predator Speed: {np.sqrt(game.predator.vx**2 + game.predator.vy**2):.1f}')
-        
+                               f'Status: {zigzag_status}\n'
+                               f'Zigzag: {zigzag_dir}\n'
+                               f'Evasion Angle: {np.degrees(game.prey.evasion_angle):.1f}°\n'
+                               f'Evasion Time: {game.prey.evasion_time:.1f}s\n'
+                               f'React Radius: {game.prey.react_radius:.1f}')
         return prey_dot, predator_dot, prey_trail_line, predator_trail_line
     
     def on_key(event):
