@@ -37,7 +37,7 @@ predator_spec = [
 
 @jitclass(prey_spec)
 class Prey:
-    def __init__(self, x, y, max_speed=3.0, react_radius=15.0, evasion_angle=np.pi/3, evasion_time=2.0, boundary_x=100.0, boundary_y=100.0):
+    def __init__(self, x, y, max_speed=4.0, react_radius=10, evasion_angle=np.pi/4, evasion_time=3.0, boundary_x=100.0, boundary_y=100.0):
         self.x = x
         self.y = y
         self.vx = 0.0
@@ -105,10 +105,10 @@ class Prey:
             self.vy = 1.0
             
             # Reset zigzag state when not evading
-            self.time_since_evasion = self.evasion_time  # Ready for immediate evasion
+            self.time_since_evasion = 0.0
         
         # Apply drag
-        drag_factor = 0.99 if self.evasion_active else 0.95
+        drag_factor = 0.95 if self.evasion_active else 0.85
         self.vx *= drag_factor
         self.vy *= drag_factor
         
@@ -143,7 +143,7 @@ class Predator:
         self.y = y
         self.vx = 0.0
         self.vy = 0.0
-        self.max_speed = 2.5
+        self.max_speed = max_speed
         self.catch_radius = catch_radius
         self.boundary_x = boundary_x
         self.boundary_y = boundary_y
@@ -193,15 +193,17 @@ def calculate_distance(x1, y1, x2, y2):
     return np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
 class PredatorPreyGame:
-    def __init__(self, width=100, height=100, prey_genome=None):
+    def __init__(self, width=100, height=100, prey_genome=None, pred_max_speed=3.0, prey_max_speed=3.0):
         self.width = width
         self.height = height
+        self.initial_prey_genome = prey_genome
         
         # Initialize prey and predator at random positions
         if prey_genome is None:
             self.prey = Prey(
                 x=15,
                 y=15,
+                max_speed=prey_max_speed,
                 boundary_x=width,
                 boundary_y=height
             )
@@ -209,7 +211,7 @@ class PredatorPreyGame:
             self.prey = Prey(
                 x=15,
                 y=15,
-                max_speed = 3.0,
+                max_speed=prey_max_speed,
                 react_radius = prey_genome.react_radius,
                 evasion_angle = prey_genome.evasion_angle,
                 evasion_time = prey_genome.evasion_time,
@@ -220,6 +222,7 @@ class PredatorPreyGame:
         self.predator = Predator(
             x=0,
             y=0,
+            max_speed=pred_max_speed,
             boundary_x=width,
             boundary_y=height
         )
@@ -262,12 +265,24 @@ class PredatorPreyGame:
     
     def reset(self):
         """Reset the game with new random positions"""
-        self.prey = Prey(
-            x=15,
-            y=15,
-            boundary_x=self.width,
-            boundary_y=self.height
-        )
+        if self.initial_prey_genome is None:
+            self.prey = Prey(
+                x=15,
+                y=15,
+                boundary_x=self.width,
+                boundary_y=self.height
+            )
+        else:
+            self.prey = Prey(
+                x=15,
+                y=15,
+                react_radius = self.initial_prey_genome.react_radius,
+                evasion_angle = self.initial_prey_genome.evasion_angle,
+                evasion_time = self.initial_prey_genome.evasion_time,
+                max_speed = 3.0,
+                boundary_x=self.width,
+                boundary_y=self.height
+            )
         
         self.predator = Predator(
             x=0,
@@ -342,9 +357,6 @@ def visualize_game():
         # Update status
         if game.game_over:
             status_text.set_text(f'CAUGHT! Time: {game.catch_time:.1f}s\nPress R to reset')
-            # Auto-reset after 3 seconds
-            if game.time_elapsed - game.catch_time > 3.0:
-                game.reset(prey_genome)
         else:
             distance = calculate_distance(game.prey.x, game.prey.y, 
                                         game.predator.x, game.predator.y)
