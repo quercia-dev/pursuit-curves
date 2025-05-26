@@ -13,7 +13,7 @@ def visualize_evolution(fitness_history):
 # Visualize a simulation with the best individual
 def visualize_best_simulation(game):
     
-    fig, ax = plt.subplots(figsize=(12, 9))
+    fig, ax = plt.subplots(figsize=(8, 6))
     ax.set_xlim(0, game.width)
     ax.set_ylim(0, game.height)
     ax.set_aspect('equal')
@@ -43,35 +43,43 @@ def visualize_best_simulation(game):
     plt.show()
 
 
-def visualize_trait_distributions(best_prey_history):
+def visualize_trait_distributions(prey_histories: list):
     """
-    Visualizes the distribution of prey traits over generations using individual plots.
+    Visualizes the distribution of prey traits over generations for multiple prey histories using individual plots.
     """
-    # Extract trait values from best prey history
-    react_radii = [prey.react_radius for prey in best_prey_history]
-    evasion_angles = [prey.evasion_angle for prey in best_prey_history]
-    evasion_times = [prey.evasion_time for prey in best_prey_history]
+    num_histories = len(prey_histories)
+    
+    # Extract trait values from all prey histories
+    all_react_radii = [[prey.react_radius for prey in history] for history in prey_histories]
+    all_evasion_angles = [[prey.evasion_angle for prey in history] for history in prey_histories]
+    all_evasion_times = [[prey.evasion_time for prey in history] for history in prey_histories]
 
     # Create subplots
     fig, axes = plt.subplots(3, 1, figsize=(8, 12))
 
     # Plot React Radius
-    axes[0].plot(react_radii)
+    for i, react_radii in enumerate(all_react_radii):
+        axes[0].plot(react_radii, label=f'History {i+1}')
     axes[0].set_xlabel('Generation')
     axes[0].set_ylabel('React Radius')
     axes[0].set_title('React Radius Over Generations')
+    axes[0].legend()
 
     # Plot Evasion Angle
-    axes[1].plot(evasion_angles)
+    for i, evasion_angles in enumerate(all_evasion_angles):
+        axes[1].plot(evasion_angles, label=f'History {i+1}')
     axes[1].set_xlabel('Generation')
     axes[1].set_ylabel('Evasion Angle')
     axes[1].set_title('Evasion Angle Over Generations')
+    axes[1].legend()
 
     # Plot Evasion Time
-    axes[2].plot(evasion_times)
+    for i, evasion_times in enumerate(all_evasion_times):
+        axes[2].plot(evasion_times, label=f'History {i+1}')
     axes[2].set_xlabel('Generation')
     axes[2].set_ylabel('Evasion Time')
     axes[2].set_title('Evasion Time Over Generations')
+    axes[2].legend()
 
     plt.tight_layout()
     plt.show()
