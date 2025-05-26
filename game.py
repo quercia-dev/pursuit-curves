@@ -37,7 +37,7 @@ predator_spec = [
 
 @jitclass(prey_spec)
 class Prey:
-    def __init__(self, x, y, max_speed=3.0, react_radius=15.0, evasion_angle=np.pi/3, evasion_time=3.0, boundary_x=100.0, boundary_y=100.0):
+    def __init__(self, x, y, max_speed=3.0, react_radius=15.0, evasion_angle=np.pi/3, evasion_time=2.0, boundary_x=100.0, boundary_y=100.0):
         self.x = x
         self.y = y
         self.vx = 0.0
@@ -83,7 +83,7 @@ class Prey:
                 target_vy = np.sin(zigzag_angle) * self.max_speed
                 
                 # Apply steering force (don't just set velocity, blend it)
-                steering_strength = 8.0  # How aggressively to change direction
+                steering_strength = 50.0  # How aggressively to change direction
                 self.vx += (target_vx - self.vx) * steering_strength * dt
                 self.vy += (target_vy - self.vy) * steering_strength * dt
                 
@@ -101,14 +101,14 @@ class Prey:
         else:
             self.evasion_active = False
             # Random wandering when not threatened (but maintain some momentum)
-            self.vx += (np.random.random() - 0.5) * 0.5
-            self.vy += (np.random.random() - 0.5) * 0.5
+            self.vx = 1.0
+            self.vy = 1.0
             
             # Reset zigzag state when not evading
             self.time_since_evasion = self.evasion_time  # Ready for immediate evasion
         
         # Apply drag
-        drag_factor = 0.98 if self.evasion_active else 0.95
+        drag_factor = 0.99 if self.evasion_active else 0.95
         self.vx *= drag_factor
         self.vy *= drag_factor
         
@@ -138,12 +138,12 @@ class Prey:
 
 @jitclass(predator_spec)
 class Predator:
-    def __init__(self, x, y, max_speed=2.0, catch_radius=2.5, boundary_x=100.0, boundary_y=100.0):
+    def __init__(self, x, y, max_speed=3.0, catch_radius=2.5, boundary_x=100.0, boundary_y=100.0):
         self.x = x
         self.y = y
         self.vx = 0.0
         self.vy = 0.0
-        self.max_speed = max_speed
+        self.max_speed = 2.5
         self.catch_radius = catch_radius
         self.boundary_x = boundary_x
         self.boundary_y = boundary_y
@@ -200,15 +200,15 @@ class PredatorPreyGame:
         # Initialize prey and predator at random positions
         if prey_genome is None:
             self.prey = Prey(
-                x=30,
-                y=30,
+                x=15,
+                y=15,
                 boundary_x=width,
                 boundary_y=height
             )
         else:
             self.prey = Prey(
-                x=30,
-                y=30,
+                x=15,
+                y=15,
                 max_speed = 3.0,
                 react_radius = prey_genome.react_radius,
                 evasion_angle = prey_genome.evasion_angle,
@@ -263,15 +263,15 @@ class PredatorPreyGame:
     def reset(self):
         """Reset the game with new random positions"""
         self.prey = Prey(
-            x=np.random.uniform(100, self.width-100),
-            y=np.random.uniform(100, self.height-100),
+            x=15,
+            y=15,
             boundary_x=self.width,
             boundary_y=self.height
         )
         
         self.predator = Predator(
-            x=np.random.uniform(50, self.width-50),
-            y=np.random.uniform(50, self.height-50),
+            x=0,
+            y=0,
             boundary_x=self.width,
             boundary_y=self.height
         )
