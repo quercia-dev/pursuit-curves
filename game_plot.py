@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
 
 
-# Visualize evolution progress
-def visualize_evolution(fitness_history):
+def visualize_fitness(fitness_history):
     plt.plot(fitness_history)
     plt.xlabel("Generation")
     plt.ylabel("Fitness")
@@ -10,9 +9,18 @@ def visualize_evolution(fitness_history):
     plt.show()
 
 
-# Visualize a simulation with the best individual
+def visualize_enhanced_fitness(prey_fitness_history, predator_fitness_history):
+    plt.figure(figsize=(12, 6))
+    plt.plot(prey_fitness_history, label='Prey Fitness')
+    plt.plot(predator_fitness_history, label='Predator Fitness')
+    plt.xlabel('Generation')
+    plt.ylabel('Fitness')
+    plt.title('Fitness History')
+    plt.legend()
+    plt.show()
+
+
 def visualize_best_simulation(game):
-    
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.set_xlim(0, game.width)
     ax.set_ylim(0, game.height)
