@@ -41,6 +41,7 @@ enhanced_predator_spec = [
     ('max_energy', float64),
     ('energy_regen_rate', float64),
     ('energy_cost_per_acceleration', float64),
+    ('pursuit_strength', float64),
 ]
 
 @jitclass(enhanced_prey_spec)
@@ -160,7 +161,7 @@ class EnhancedPrey:
 
 @jitclass(enhanced_predator_spec)
 class EnhancedPredator:
-    def __init__(self, x, y, max_speed=4.0, catch_radius=2.5, boundary_x=100.0, boundary_y=100.0):
+    def __init__(self, x, y, max_speed=4.0, catch_radius=2.5, pursuit_strength=4.0, boundary_x=100.0, boundary_y=100.0):
         self.x = x
         self.y = y
         self.vx = 0.0
@@ -171,10 +172,11 @@ class EnhancedPredator:
         self.boundary_y = boundary_y
         
         # Energy system
-        self.max_energy = 120.0  # Slightly more than prey
+        self.max_energy = 120.0
         self.energy = self.max_energy
-        self.energy_regen_rate = 15.0  # Slower regen than prey
-        self.energy_cost_per_acceleration = 20.0  # Higher cost than prey
+        self.energy_regen_rate = 15.0
+        self.energy_cost_per_acceleration = 20.0
+        self.pursuit_strength = pursuit_strength
     
     def update(self, prey_x, prey_y, prey_react_radius, dt=0.1):
         # Store previous velocity for acceleration calculation
@@ -187,12 +189,12 @@ class EnhancedPredator:
         
         if distance > 0:
             # Energy-dependent pursuit strength
-            base_pursuit_strength = 4.0
+            base_pursuit_strength = self.pursuit_strength
             energy_factor = max(0.2, self.energy / self.max_energy)  # Never go below 20% effectiveness
-            pursuit_strength = base_pursuit_strength * energy_factor
+            pursuit_energy = base_pursuit_strength * energy_factor
             
-            self.vx += (dx / distance) * pursuit_strength
-            self.vy += (dy / distance) * pursuit_strength
+            self.vx += (dx / distance) * pursuit_energy
+            self.vy += (dy / distance) * pursuit_energy
         
         # Calculate acceleration magnitude for energy cost
         accel_x = (self.vx - prev_vx) / dt if dt > 0 else 0
@@ -242,7 +244,7 @@ def calculate_distance(x1, y1, x2, y2):
     return np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
 class EnhancedPredatorPreyGame:
-    def __init__(self, width=100, height=100, prey_genome=None):
+    def __init__(self, width=100, height=100, prey_genome=None, predator_genome=None):
         self.width = width
         self.height = height
         
@@ -266,12 +268,24 @@ class EnhancedPredatorPreyGame:
                 boundary_y=height
             )
         
-        self.predator = EnhancedPredator(
-            x=0,
-            y=0,
-            boundary_x=width,
-            boundary_y=height
-        )
+        if predator_genome is None:
+            self.predator = EnhancedPredator(
+                x=0,
+                y=0,
+                boundary_x=width,
+                boundary_y=height
+            )
+        else:
+            self.predator = EnhancedPredator(
+                x=0,
+                y=0,
+                max_speed = 4.0,
+                catch_radius = 2.5,
+                boundary_x=width,
+                boundary_y=height,
+                pursuit_strength = predator_genome.pursuit_strength # Pass pursuit strength from genome
+            )
+
         
         self.game_over = False
         self.catch_time = None
