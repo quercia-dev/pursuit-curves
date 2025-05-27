@@ -5,7 +5,6 @@ from numba import njit
 from numba.experimental import jitclass
 from numba import float64, int32, boolean
 
-# Define the spec for Numba jitclass
 prey_spec = [
     ('x', float64),
     ('y', float64),
@@ -71,19 +70,18 @@ class Prey:
             # calculate base flee angle
             self.base_flee_angle = np.arctan2(dy, dx)
 
-            #check if it's time to evade
+            # check if it's time to evade
             if self.time_since_evasion >= self.evasion_time:
                 self.zigzag_direction *= -1.0
 
             # Calculate zigzag angle
                 zigzag_angle = self.base_flee_angle + (self.zigzag_direction * self.evasion_angle)
                 
-                # Calculate desired velocity direction (maintain speed, change direction)
+                # Calculate desired velocity direction
                 target_vx = np.cos(zigzag_angle) * self.max_speed
                 target_vy = np.sin(zigzag_angle) * self.max_speed
                 
-                # Apply steering force (don't just set velocity, blend it)
-                steering_strength = 50.0  # How aggressively to change direction
+                steering_strength = 50.0 
                 self.vx += (target_vx - self.vx) * steering_strength * dt
                 self.vy += (target_vy - self.vy) * steering_strength * dt
                 

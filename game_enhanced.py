@@ -5,7 +5,6 @@ from numba import njit
 from numba.experimental import jitclass
 from numba import float64, int32, boolean
 
-# Enhanced specs with energy
 enhanced_prey_spec = [
     ('x', float64),
     ('y', float64),
@@ -190,7 +189,7 @@ class EnhancedPredator:
         if distance > 0:
             # Energy-dependent pursuit strength
             base_pursuit_strength = self.pursuit_strength
-            energy_factor = max(0.2, self.energy / self.max_energy)  # Never go below 20% effectiveness
+            energy_factor = max(0.2, self.energy / self.max_energy)
             pursuit_energy = base_pursuit_strength * energy_factor
             
             self.vx += (dx / distance) * pursuit_energy
@@ -203,7 +202,7 @@ class EnhancedPredator:
         
         # Energy consumption based on acceleration
         if distance < prey_react_radius:
-            if acceleration_magnitude > 3.0:  # Lower threshold than prey (predator works harder)
+            if acceleration_magnitude > 3.0:
                 energy_cost = self.energy_cost_per_acceleration * (acceleration_magnitude / 40.0) * dt
                 self.energy = max(0.0, self.energy - energy_cost)
             else:
@@ -283,7 +282,7 @@ class EnhancedPredatorPreyGame:
                 catch_radius = 2.5,
                 boundary_x=width,
                 boundary_y=height,
-                pursuit_strength = predator_genome.pursuit_strength # Pass pursuit strength from genome
+                pursuit_strength = predator_genome.pursuit_strength
             )
 
         
@@ -407,7 +406,7 @@ def visualize_game():
             status_text.set_text(f'CAUGHT! Time: {game.catch_time:.1f}s\nPress R to reset')
             # Auto-reset after 3 seconds
             if game.time_elapsed - game.catch_time > 3.0:
-                game.reset(prey_genome)
+                game.reset()
         else:
             distance = calculate_distance(game.prey.x, game.prey.y, 
                                         game.predator.x, game.predator.y)
