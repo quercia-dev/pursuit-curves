@@ -3,6 +3,57 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.ticker as ticker
 from matplotlib import gridspec
+from numba import njit
+
+@njit
+def restack_state_noacc(traj_flat):
+    """
+    Convert a flat RK4 trajectory array of shape (n_steps, 8)
+    into the “state tensor” shape (n_steps, 2 agents, 3 features, 2 dims),
+    where:
+      feature 0 = position (x, y)
+      feature 1 = velocity (vx, vy)
+      feature 2 = acceleration = (0, 0)
+
+    traj_flat[i] = [p_x, p_y, v_x, v_y, q_x, q_y, u_x, u_y]
+      predator pos = (p_x, p_y)
+      predator vel = (v_x, v_y)
+      prey    pos = (q_x, q_y)
+      prey    vel = (u_x, u_y)
+
+    Returns a numpy array of shape (n_steps, 2, 3, 2), with zeros for accelerations.
+    """
+    n_steps = traj_flat.shape[0]
+    state = np.zeros((n_steps, 2, 3, 2), dtype=np.float64)
+
+    for t in range(n_steps):
+        # Unpack flat trajectory at time t
+        p_x = traj_flat[t, 0]
+        p_y = traj_flat[t, 1]
+        v_x = traj_flat[t, 2]
+        v_y = traj_flat[t, 3]
+        q_x = traj_flat[t, 4]
+        q_y = traj_flat[t, 5]
+        u_x = traj_flat[t, 6]
+        u_y = traj_flat[t, 7]
+
+        # --- Fill predator position & velocity ---
+        state[t, 0, 0, 0] = p_x   # predator x
+        state[t, 0, 0, 1] = p_y   # predator y
+        state[t, 0, 1, 0] = v_x   # predator vx
+        state[t, 0, 1, 1] = v_y   # predator vy
+
+        # --- Fill prey position & velocity ---
+        state[t, 1, 0, 0] = q_x   # prey x
+        state[t, 1, 0, 1] = q_y   # prey y
+        state[t, 1, 1, 0] = u_x   # prey vx
+        state[t, 1, 1, 1] = u_y   # prey vy
+
+        # --- Feature 2 (acceleration) remains zero ---
+        # state[t, 0, 2, :] and state[t, 1, 2, :] are already zeros
+
+    return state
+
     
 def plot_trajectory(state, params: dict, bound: int = 20, title='', ax_bounded=None, ax_autoscaled=None):
     """
