@@ -6,14 +6,14 @@ from matplotlib import gridspec
 from numba import njit
 
 @njit
-def restack_state_noacc(traj_flat):
+def restack_state(traj_flat, R_react, prey_acc, navigation_gain):
     """
     Convert a flat RK4 trajectory array of shape (n_steps, 8)
     into the “state tensor” shape (n_steps, 2 agents, 3 features, 2 dims),
     where:
       feature 0 = position (x, y)
       feature 1 = velocity (vx, vy)
-      feature 2 = acceleration = (0, 0)
+      feature 2 = acceleration (ax, ay)
 
     traj_flat[i] = [p_x, p_y, v_x, v_y, q_x, q_y, u_x, u_y]
       predator pos = (p_x, p_y)
@@ -21,7 +21,10 @@ def restack_state_noacc(traj_flat):
       prey    pos = (q_x, q_y)
       prey    vel = (u_x, u_y)
 
-    Returns a numpy array of shape (n_steps, 2, 3, 2), with zeros for accelerations.
+    We compute instantaneous accelerations by calling compute_derivative(...)
+    on each flattened row.
+
+    Returns a numpy array of shape (n_steps, 2, 3, 2).
     """
     n_steps = traj_flat.shape[0]
     state = np.zeros((n_steps, 2, 3, 2), dtype=np.float64)
@@ -46,13 +49,109 @@ def restack_state_noacc(traj_flat):
         # --- Fill prey position & velocity ---
         state[t, 1, 0, 0] = q_x   # prey x
         state[t, 1, 0, 1] = q_y   # prey y
-        state[t, 1, 1, 0] = u_x   # prey vx
-        state[t, 1, 1, 1] = u_y   # prey vy
+        state[t, 1, 1, 0] = u_x   # prey ux
+        state[t, 1, 1, 1] = u_y   # prey uy
 
-        # --- Feature 2 (acceleration) remains zero ---
-        # state[t, 0, 2, :] and state[t, 1, 2, :] are already zeros
+        # Compute instantaneous derivative to get accelerations
+        deriv = compute_derivative(traj_flat[t], R_react, prey_acc, navigation_gain)
+        # deriv[2:4] = predator ax, ay
+        state[t, 0, 2, 0] = deriv[2]
+        state[t, 0, 2, 1] = deriv[3]
+        # deriv[6:8] = prey ax, ay
+        state[t, 1, 2, 0] = deriv[6]
+        state[t, 1, 2, 1] = deriv[7]
 
     return state
+
+@njit
+def compute_derivative(state_flat, R_react, prey_acc, navigation_gain):
+    # Unpack
+    p_x, p_y = state_flat[0], state_flat[1]
+    v_x, v_y = state_flat[2], state_flat[3]
+    q_x, q_y = state_flat[4], state_flat[5]
+    u_x, u_y = state_flat[6], state_flat[7]
+    # Convert into 2D arrays
+    pred_pos = np.array((p_x, p_y), dtype=np.float64)
+    pred_vel = np.array((v_x, v_y), dtype=np.float64)
+    prey_pos = np.array((q_x, q_y), dtype=np.float64)
+    prey_vel = np.array((u_x, u_y), dtype=np.float64)
+    
+    # Prey acceleration: if dist < R_react, accelerate orth to LOS
+    direction = prey_pos - pred_pos
+    dist = norm(direction)
+    if dist < R_react:
+        acc_prey = normalize(rotate_right_90(direction)) * prey_acc
+    else:
+        acc_prey = np.zeros(2, dtype=np.float64)
+
+    # Predator acceleration: PN
+    acc_pred = proportional_navigation_acceleration(
+        pred_pos, pred_vel, prey_pos, prey_vel, navigation_gain)
+    
+    # Build ds/dt
+    dsdt = np.empty(8, dtype=np.float64)
+    # predator pos dot = predator vel
+    dsdt[0] = v_x
+    dsdt[1] = v_y
+    # predator vel dot = acc_pred
+    dsdt[2] = acc_pred[0]
+    dsdt[3] = acc_pred[1]
+    # prey pos dot = prey vel
+    dsdt[4] = u_x
+    dsdt[5] = u_y
+    # prey vel dot = acc_prey
+    dsdt[6] = acc_prey[0]
+    dsdt[7] = acc_prey[1]
+
+    return dsdt
+
+@njit
+def proportional_navigation_acceleration(pred_pos, pred_vel, prey_pos, prey_vel, navigation_gain):
+    r_vec = prey_pos - pred_pos # line of sight (LOS)
+    v_rel = prey_vel - pred_vel # relative velocity
+    dist = norm(r_vec)
+
+    if dist == 0.0:
+        return np.zeros(2, dtype=np.float64)
+    
+    # Normalized line of sight vector
+    los_unit = r_vec / dist
+    
+    # Cross product to get line of sight rotation rate
+    los_rate = cross2d(r_vec, v_rel) / (dist * dist)
+    # Rotate los unit
+    los_perp = np.array([-los_unit[1], los_unit[0]])
+    # Proportional navigation acceleration
+    acc_mag = navigation_gain * los_rate * norm(v_rel)
+    acceleration = acc_mag * los_perp
+    return acceleration
+
+@njit
+def norm(v):
+    return np.sqrt(np.sum(v ** 2))
+
+@njit
+def norm_list(v):
+    out = np.empty(v.shape[0])
+    for i in range(v.shape[0]):
+        out[i] = np.sqrt(v[i, 0] ** 2 + v[i, 1] ** 2)
+    return out
+
+@njit
+def normalize(v):
+    length = norm(v)
+    if length == 0.0:
+        return np.zeros_like(v)
+    return v / length
+
+@njit
+def rotate_right_90(v):
+    """Rotate a 2D vector 90 degrees to the right (clockwise)."""
+    return np.array([v[1], -v[0]])
+
+@njit
+def cross2d(a, b):
+    return a[0] * b[1] - a[1] * b[0]
 
     
 def plot_trajectory(state, params: dict, bound: int = 20, title='', ax_bounded=None, ax_autoscaled=None):
