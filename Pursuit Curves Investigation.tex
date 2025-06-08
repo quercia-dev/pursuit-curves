@@ -7,7 +7,16 @@
 \usepackage[margin=1in]{geometry}
 
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{1em}
+\setlength{\parskip}{0.5em}
+
+\renewenvironment{abstract}
+{
+  \centering\normalfont
+}
+{}
+
+\setlength{\textfloatsep}{1pt}
+\setlength{\intextsep}{1pt}
 
 \begin{document}
 
@@ -16,14 +25,19 @@
 \author{Tebe Nigrelli, Tommaso Ferracina}
 \date{\today}
 
-\maketitle
-
-\begin{abstract}
-  We study a variation of the Homicidal Chauffeur Problem in $\mathbb{R}^2$, a differential game involving two agents: an agile prey and a fast predator. We set the strategy of the prey to right-angle acceleration, whereas the predator uses a Proportional Navigation (PN) strategy. We simulate the trajectories using Runge-Kutta 4 integration, leveraging the Python Numba library for computational efficiency. We analyse individual trajectories using summary statistics and Fourier decomposition via the Discrete Cosine Transform. Finally, we explore a large phase space, varying predator speed and prey acceleration and identify regions of behavior corresponding to different capture dynamics. Our results highlight distinct strategy regimes and the expressivity of summary statistics to characterize pursuit-evasion games.
-\end{abstract}
-
+\twocolumn[
+  \maketitle
+  \begin{center}
+    \begin{minipage}{0.9\textwidth}
+      \begin{abstract}
+        We study a variation of the Homicidal Chauffeur Problem in $\mathbb{R}^2$, a differential game involving two agents: an agile prey and a fast predator. We set the strategy of the prey to right-angle acceleration, whereas the predator uses a Proportional Navigation (PN) strategy. We simulate the trajectories using Runge-Kutta 4 integration, leveraging the Python Numba library for computational efficiency. We analyse individual trajectories using summary statistics and Fourier decomposition via the Discrete Cosine Transform. Finally, we explore a large phase space, varying predator speed and prey acceleration and identify regions of behavior corresponding to different capture dynamics. Our results highlight distinct strategy regimes and the expressivity of summary statistics to characterize pursuit-evasion games.
+      \end{abstract}
+    \end{minipage}
+  \end{center}
+]
 \section{Introduction}
-The Homicidal Chauffeur Problem, first formulated by Rufus Isaacs in his 1951 paper "Games of Pursuit", is a classical pursuit-evasion differential game. It models the dynamics between a pursuer $P$, and an evader $E$, constrained to move in a plane. The pursuer is faster $v_2 > v_1$ but subject to a minimum turning radius, while the evader can maneuver freely. Capture is defined as the moment when the evader enters the pursuer's, with the capture time serving as the game's payoff.
+{\setlength{\parskip}{0pt}
+The Homicidal Chauffeur Problem, first formulated by Rufus Isaacs in his 1951 paper "Games of Pursuit", is a classical pursuit-evasion differential game. It models the dynamics between a pursuer $P$, and an evader $E$, constrained to move in a plane. The pursuer is faster $v_2 > v_1$ but subject to a minimum turning radius, while the evader can maneuver freely. Capture is defined as the moment when the evader enters the pursuer's, with the capture time serving as the game's payoff.}
 
 The relevance of this framework extends from missile guidance to predator-prey interactions in biology. Inspired by Isaac's model, we study a 2D variant where the pursuer uses Proportional Navigation (PN) while the evader executes right-angle evasive maneuvers. Our investigation focuses on deterministic strategies and analyzes their outcomes both dynamically and through the Discrete Cosine Transform.
 
@@ -31,7 +45,6 @@ The relevance of this framework extends from missile guidance to predator-prey i
 At initialization, we set the prey to its maximum speed, while varying the initial direction (bearing). Since the proportional navigation algorithm requires the predator to be moving at initialization, we set it to move at maximum speed towards the prey. Finally, we set initial acceleration to zero and place the two agents at a high distance from each other.
 
 \[
-  \small
   \begin{array}{l}
     \left\{
       \begin{aligned}
@@ -98,11 +111,11 @@ At initialization, we set the prey to its maximum speed, while varying the initi
         v_c(t) &= -\,\hat r(t)\cdot\Delta v,
         &\quad &\mathrm{closing\ velocity};\\
         N &\in [3,5],
-        &\quad &\mathrm{navigation\ constant};\\
+        &\quad &\mathrm{damping};\\
         \ddot{y}(t) &= N \cdot v_c(t) \cdot \dot{\lambda}(t) \cdot
         \begin{bmatrix} -\hat{r}_y \\ \hat{r}_x
         \end{bmatrix}
-        &\quad &\mathrm{PN\ control\ law}.
+        &\quad &\mathrm{PN\ law}.
       \end{aligned}
     \]
 
@@ -151,10 +164,9 @@ At initialization, we set the prey to its maximum speed, while varying the initi
         \end{itemize}
 
         We first observe the behaviour of Signed Distance, in order to identify the best activation function. We consider sign(x), tanh(10x) and the f(x)=x to view a range of analytical properties.
-
         \begin{figure}[H]
           \centering
-          \includegraphics[width=0.5\textwidth]{figures/signed_distance.png}
+          \includegraphics[width=0.45\textwidth]{figures/signed_distance.png}
           \caption{Initial trajectory}
           \label{fig:trajectory}
         \end{figure}
@@ -165,24 +177,16 @@ At initialization, we set the prey to its maximum speed, while varying the initi
 
         \begin{figure}[H]
           \centering
-          % First sub-figure
-          \begin{subfigure}[b]{0.48\textwidth}
-            \centering
-            \includegraphics[width=\textwidth]{figures/initial_bearing_120.png}
-            \caption{Initial bearing of 120°}
-            \label{fig:bear120}
-          \end{subfigure}
-          \hfill
-          % Second sub-figure
-          \begin{subfigure}[b]{0.48\textwidth}
-            \centering
-            \includegraphics[width=\textwidth]{figures/initial_bearing_240.png}
-            \caption{Initial bearing of 240°}
-            \label{fig:bear240}
-          \end{subfigure}
-          % Global caption and label
-          \caption{Trajectories with different initial bearings.}
-          \label{fig:trajectories}
+          \includegraphics[width=0.45\textwidth]{figures/initial_bearing_120.png}
+          \caption{Initial bearing of 120°}
+          \label{fig:bear120}
+        \end{figure}
+
+        \begin{figure}[H]
+          \centering
+          \includegraphics[width=0.45\textwidth]{figures/initial_bearing_240.png}
+          \caption{Initial bearing of 240°}
+          \label{fig:bear240}
         \end{figure}
 
         The presence of waves and suggests the need to use more advanced methods to understand the behavior. We use the Cosine Transform to estimate the natural frequency of the waves: this technique consists in decomposing the function into the cosine waves, which is the natural method to identify the "dominant" frequencies within a periodic function.
@@ -192,14 +196,14 @@ At initialization, we set the prey to its maximum speed, while varying the initi
         We plot the log-log Discrete Cosine Transform to study the results shown before: decomposing the signed distance for the previous three trajectories, we notice that the \textit{Hamming Window} performs better, producing narrower peakes, which is more aligned with the "Dirac Comb" shape predicted theoretically.
         \begin{figure}[H]
           \centering
-          \includegraphics[width=0.45\textwidth]{figures/dct_120_loglog.png}
+          \includegraphics[width=0.40\textwidth]{figures/dct_120_loglog.png}
           \caption{DCT of first experiment with bearing of 120°}
           \label{fig:dct1}
         \end{figure}
 
         \begin{figure}[H]
           \centering
-          \includegraphics[width=0.45\textwidth]{figures/dct_240_loglog.png}
+          \includegraphics[width=0.40\textwidth]{figures/dct_240_loglog.png}
           \caption{DCT of second experiment with bearing of 120°}
           \label{fig:dct2}
         \end{figure}
@@ -208,7 +212,7 @@ At initialization, we set the prey to its maximum speed, while varying the initi
 
         \begin{figure}[H]
           \centering
-          \includegraphics[width=0.5\textwidth]{figures/f_and_cos_antitr.png}
+          \includegraphics[width=0.45\textwidth]{figures/f_and_cos_antitr.png}
           \label{fig:antitransform}
         \end{figure}
 
@@ -231,17 +235,18 @@ At initialization, we set the prey to its maximum speed, while varying the initi
         For matters of computational and memory efficiency, we proceed by computing the summary metrics for each trajectory at the end of each run, displaying the complete results only at the end through heatmaps.
 
         We use the following conditions to define the runs: we use a step size of 100 to interpolate a square range of $(v^\text{max}_y, a_x)$ values, where each combination corresponds to a run. We then plot different metrics for each run.
+
         \[
-          n_{\text{ticks}} = 100, \quad \Delta t = 0.0001,\quad t_{\text{max}} = 20,\quad n = 5
-        \]
-        \[
-          \left\{
-            \begin{aligned}
-              &v_y \in [1, 10],\quad a_x \in [1, 10] \\
-              &a^{\text{max}}_y = 1,\quad R_{\text{kill}} = 1 \\
-              &v^{\text{max}}_x = 1,\quad R_{\text{react}} = 5
+          \begin{aligned}
+            &n_{\text{ticks}} = 100, \quad \Delta t = 0.0001,\quad t_{\text{max}} = 20,\quad n = 5 \\
+            &\left\{
+              \begin{aligned}
+                &v_y \in [1, 10],\quad a_x \in [1, 10] \\
+                &a^{\text{max}}_y = 1,\quad R_{\text{kill}} = 1 \\
+                &v^{\text{max}}_x = 1,\quad R_{\text{react}} = 5
+              \end{aligned}
+              \right.
             \end{aligned}
-            \right.
           \]
 
           For practical reasons, we include the $t_{\text{max}}$ term, which bounds the maximum duration of the trajectory, to discard trajectories which never converge.
@@ -279,7 +284,6 @@ At initialization, we set the prey to its maximum speed, while varying the initi
 
           As a final remark, we observe that distance always decreases over the runs, with a faster initial rate at the beginning, regardless of prey acceleration, and lowers near the end. Similarly, the final difference between the speeds decreases, though it generally remains negative, as the predator is faster.
 
-          \hfil
           \section{Conclusion}
           Even when it is reduced to simple and deterministic decision rules for both prey and predator in $\mathbb{R}^2$, the \textit{Homicidal Chauffeur Problem} can exhibits a rich variety of behaviours. In our investigation, we picked right-angle evasion for the prey and Proportional Navigation for the predator; after defining the setting and assumptions, we identified relevant metrics for studying the trajectories: signed and unsigned distances are qualitative indicators of the efficiency of the chase, while the dot product between the velocities highlights alignment in direction between the agents. We compared variations of signed distances through an activation function and applied the cosine transform to study single trajectories, concluding that the most informative log-log plot may be produced through a Hamming window function applied to the positive distance metric. Finally, we picked a region of the parameter space and for fixed initial conditions we varied predator maximum speed and prey acceleration. We identified a two roughly symmetric basins of behaviours, in which predators, if fast enough in relation to the prey's acceleration, chase it in parallel but intercept it at a steep angle of attack, while the opposite phenomenon occurs in the reverse.
 
