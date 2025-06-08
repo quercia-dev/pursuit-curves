@@ -8,5 +8,6 @@
 !**.yml
 !**.py
 !src-EA
-!figures/
+!figures
+!figures/*.*
 !report.tex
