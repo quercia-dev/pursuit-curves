@@ -1,13 +1,20 @@
-\documentclass[11pt, twocolumn]{article}
+\documentclass[10pt, twocolumn]{article}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{graphicx}
 \usepackage{subcaption}
 \usepackage{float}
 \usepackage{url}
-\usepackage[margin=1in]{geometry}
+\usepackage{geometry}
+
+\geometry{
+  top=0.5in,
+  left=1in,
+  right=1in,
+  bottom=1in
+}
 
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{0.5em}
+\setlength{\parskip}{1pt}
 
 \renewenvironment{abstract}
 {
@@ -167,7 +174,6 @@ At initialization, we set the prey to its maximum speed, while varying the initi
         \begin{figure}[H]
           \centering
           \includegraphics[width=0.45\textwidth]{figures/signed_distance.png}
-          \caption{Initial trajectory}
           \label{fig:trajectory}
         \end{figure}
 
@@ -196,14 +202,14 @@ At initialization, we set the prey to its maximum speed, while varying the initi
         We plot the log-log Discrete Cosine Transform to study the results shown before: decomposing the signed distance for the previous three trajectories, we notice that the \textit{Hamming Window} performs better, producing narrower peakes, which is more aligned with the "Dirac Comb" shape predicted theoretically.
         \begin{figure}[H]
           \centering
-          \includegraphics[width=0.40\textwidth]{figures/dct_120_loglog.png}
+          \includegraphics[width=0.45\textwidth]{figures/dct_120_loglog.png}
           \caption{DCT of first experiment with bearing of 120°}
           \label{fig:dct1}
         \end{figure}
 
         \begin{figure}[H]
           \centering
-          \includegraphics[width=0.40\textwidth]{figures/dct_240_loglog.png}
+          \includegraphics[width=0.45\textwidth]{figures/dct_240_loglog.png}
           \caption{DCT of second experiment with bearing of 120°}
           \label{fig:dct2}
         \end{figure}
@@ -249,12 +255,11 @@ At initialization, we set the prey to its maximum speed, while varying the initi
             \end{aligned}
           \]
 
-          For practical reasons, we include the $t_{\text{max}}$ term, which bounds the maximum duration of the trajectory, to discard trajectories which never converge.
+          For practical reasons, we impose a $t_{\text{max}}$ term, which bounds the maximum duration of the trajectory, to discard trajectories which never converge.
 
           \begin{figure}[H]
             \centering
-            \includegraphics[width=0.4\textwidth]{figures/phase_duration_distance.png}
-            \caption{Phase plot of Chase Duration and Mean Distance.}
+            \includegraphics[width=0.45\textwidth]{figures/phase_duration_distance.png}
             \label{fig:phaseplot1}
           \end{figure}
 
@@ -266,8 +271,7 @@ At initialization, we set the prey to its maximum speed, while varying the initi
 
           \begin{figure}[H]
             \centering
-            \includegraphics[width=0.4\textwidth]{figures/phase_avg_dist_dot.png}
-            \caption{Phase plots.}
+            \includegraphics[width=0.45\textwidth]{figures/phase_avg_dist_dot.png}
             \label{fig:phaseplot2}
           \end{figure}
 
@@ -277,13 +281,11 @@ At initialization, we set the prey to its maximum speed, while varying the initi
 
           \begin{figure}[H]
             \centering
-            \includegraphics[width=0.4\textwidth]{figures/phase_derivative_dist.png}
-            \caption{Phase plots.}
+            \includegraphics[width=0.45\textwidth]{figures/phase_derivative_dist.png}
             \label{fig:phaseplot3}
           \end{figure}
 
           As a final remark, we observe that distance always decreases over the runs, with a faster initial rate at the beginning, regardless of prey acceleration, and lowers near the end. Similarly, the final difference between the speeds decreases, though it generally remains negative, as the predator is faster.
-
           \section{Conclusion}
           Even when it is reduced to simple and deterministic decision rules for both prey and predator in $\mathbb{R}^2$, the \textit{Homicidal Chauffeur Problem} can exhibits a rich variety of behaviours. In our investigation, we picked right-angle evasion for the prey and Proportional Navigation for the predator; after defining the setting and assumptions, we identified relevant metrics for studying the trajectories: signed and unsigned distances are qualitative indicators of the efficiency of the chase, while the dot product between the velocities highlights alignment in direction between the agents. We compared variations of signed distances through an activation function and applied the cosine transform to study single trajectories, concluding that the most informative log-log plot may be produced through a Hamming window function applied to the positive distance metric. Finally, we picked a region of the parameter space and for fixed initial conditions we varied predator maximum speed and prey acceleration. We identified a two roughly symmetric basins of behaviours, in which predators, if fast enough in relation to the prey's acceleration, chase it in parallel but intercept it at a steep angle of attack, while the opposite phenomenon occurs in the reverse.
 
