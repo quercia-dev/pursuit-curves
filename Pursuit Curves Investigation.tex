@@ -7,8 +7,8 @@
 
 \geometry{
   top=0.5in,
-  left=1in,
-  right=1in,
+  left=0.8in,
+  right=0.8in,
   bottom=1in
 }
 
@@ -132,7 +132,7 @@ At initialization, we set the prey to its maximum speed, while varying the initi
     \subsubsection{Integration Method}
     We initially employed Euler integration due to its simplicity and computational efficiency. With only one function evaluation per time step, it allowed us to get straight into the analysis. However, Euler's method suffers from a local truncation error of $O(\Delta t^2)$ and a global error of $O(\Delta t^)$, making it less suitable for precise simulations.
 
-    After further evaluation, we upgraded to the Fourth-Order Runge Kutta method (RK4). This method is more computationally demanding, evaluating the function four times every step, it offers a local error of $O(\Delta t^5)$ and a global error of $O(\Delta t^4)$. This significantly improves accuracy and numerical stability. Furthermore, the increased stability permits the use of larger time steps $(\Delta t)$, which can offset the increased per-step cost.
+    After further evaluation, we upgraded to the Fourth-Order Runge Kutta method (RK4). This method is more computationally demanding, evaluating the function four times every step, it offers a local error of $O(\Delta t^5)$ and a global error of $O(\Delta t^4)$. This significantly improves accuracy and numerical stability. Furthermore, the increased stability permits the use of larger time steps $(\Delta t)$, which can offset the increased per-step cost. In our case, we were able to decrease the time step by two orders of magnitude, from $\texttt{1e-4}$ to $\texttt{1e-2}$, encountering a speed up of 60 times, while still maintaining the quality of our results.
 
     \subsubsection{Homicidal Chauffeur Assumptions}
     Throughout our investigation, we also impose the nonstrict inequalities of the Homicidal Chauffeur problem referenced earlier, which affect both acceleration and maximal velocities: the predator is faster, while the prey has a faster acceleration, making it more maneuvrable.
@@ -155,7 +155,7 @@ At initialization, we set the prey to its maximum speed, while varying the initi
       \[
         \left\{
           \begin{aligned}
-            &\Delta t = 0.0001,\quad d_{\text{max}} = 20,\quad n = 5 \\
+            &\Delta t = 0.0001,\quad d_{\text{max}} = 20,\quad N = 2 \\
             &v_y = 1, \quad v_x = 2, \quad a_y = 1, \quad a_x = 2 \\
             &R_{\text{react}} = 5,\quad R_{\text{kill}} = 1 \\
           \end{aligned}
@@ -225,9 +225,10 @@ At initialization, we set the prey to its maximum speed, while varying the initi
 
         We use the following conditions to define the runs: we use a step size of 100 to interpolate a square range of $(v^\text{max}_y, a_x)$ values, where each combination corresponds to a run. We then plot different metrics for each run.
 
+        {\small
         \[
           \begin{aligned}
-            &n_{\text{ticks}} = 100, \quad \Delta t = 0.0001,\quad t_{\text{max}} = 20,\quad n = 5 \\
+            &n_{\text{ticks}} = 100, \quad \Delta t = 0.0001,\quad t_{\text{max}} = 20,\quad N = 2 \\
             &\left\{
               \begin{aligned}
                 &v_y \in [1, 10],\quad a_x \in [1, 10] \\
@@ -237,8 +238,9 @@ At initialization, we set the prey to its maximum speed, while varying the initi
               \right.
             \end{aligned}
           \]
+          }
 
-          For practical reasons, we impose a $t_{\text{max}}$ term, which bounds the maximum duration of the trajectory, to discard trajectories which never converge.
+          For practical reasons, we impose a $t_{\text{max}}$ term, which bounds the maximum duration of the trajectory, to discard trajectories which never converge. In addition, we observed that higher $\text{N}$ values produced more sudden changes in the phase plots; we used $\text{N = 2}$ as it provided the clearest qualitative distinction between areas.
 
           \begin{figure}[H]
             \centering
