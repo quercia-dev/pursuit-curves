@@ -1,7 +1,6 @@
 \documentclass[10pt, twocolumn]{article}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{graphicx}
-\usepackage{subcaption}
 \usepackage{float}
 \usepackage{url}
 \usepackage{geometry}
@@ -184,15 +183,7 @@ At initialization, we set the prey to its maximum speed, while varying the initi
         \begin{figure}[H]
           \centering
           \includegraphics[width=0.45\textwidth]{figures/initial_bearing_120.png}
-          \caption{Initial bearing of 120°}
           \label{fig:bear120}
-        \end{figure}
-
-        \begin{figure}[H]
-          \centering
-          \includegraphics[width=0.45\textwidth]{figures/initial_bearing_240.png}
-          \caption{Initial bearing of 240°}
-          \label{fig:bear240}
         \end{figure}
 
         The presence of waves and suggests the need to use more advanced methods to understand the behavior. We use the Cosine Transform to estimate the natural frequency of the waves: this technique consists in decomposing the function into the cosine waves, which is the natural method to identify the "dominant" frequencies within a periodic function.
@@ -203,22 +194,14 @@ At initialization, we set the prey to its maximum speed, while varying the initi
         \begin{figure}[H]
           \centering
           \includegraphics[width=0.45\textwidth]{figures/dct_120_loglog.png}
-          \caption{DCT of first experiment with bearing of 120°}
           \label{fig:dct1}
         \end{figure}
 
-        \begin{figure}[H]
-          \centering
-          \includegraphics[width=0.45\textwidth]{figures/dct_240_loglog.png}
-          \caption{DCT of second experiment with bearing of 120°}
-          \label{fig:dct2}
-        \end{figure}
-
-        In the first plot, the `thumb' shapes of the cosine decomposition, may be informally understood by observing the behaviour of the similar function, such as $t(x) := \frac{2}{1+x^4}$, taken as a single peak in the decomposition. Evaluating the antitransform and observing the positive $x>0$ values, one recognises the behaviour and general shape of a damped oscillator, which is related to the behaviour of the first trajectory.
+        In the plot, the `thumb' shapes of the cosine decomposition, may be informally understood by observing the behaviour of the similar function, such as $t(x) := \frac{2}{1+x^4}$, taken as a single peak in the decomposition. Evaluating the antitransform and observing the positive $x>0$ values, one recognises the behaviour and general shape of a damped oscillator, which is related to the behaviour of the first trajectory.
 
         \begin{figure}[H]
           \centering
-          \includegraphics[width=0.45\textwidth]{figures/f_and_cos_antitr.png}
+          \includegraphics[width=0.35\textwidth]{figures/f_and_cos_antitr.png}
           \label{fig:antitransform}
         \end{figure}
 

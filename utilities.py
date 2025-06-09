@@ -222,7 +222,7 @@ def plot_trajectory(state, params: dict, bound: int = 20, title='', ax_bounded=N
             ax.set_xlim(-bound, bound)
             ax.set_ylim(-bound, bound)
             ax.set_title('Bounded View')
-            ax.legend(loc='best')
+            ax.legend(loc='lower left')
         elif ax_idx == 1:
             all_positions = np.vstack([predator_pos, prey_pos])
             x_min, y_min = np.min(all_positions, axis=0)
@@ -330,12 +330,11 @@ def plot_combined_analysis(state, params: dict, bound: int = 20, title='', analy
     total_rows = 1 + n_metrics
 
     # Create figure and gridspec
-    fig = plt.figure(figsize=(16, 3 + 2.5 * total_rows))
+    k = 1.5
+    fig = plt.figure(figsize=(8, (1 + k) * total_rows))
     gs = gridspec.GridSpec(total_rows, 2, height_ratios=[2.5] + [1.0] * n_metrics)
     
     # Set title
-    if title == '':
-        title = f'{params}'
     fig.suptitle(title, fontsize=16, y=0.99, va='top')
     
     # Create trajectory plots
