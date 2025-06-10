@@ -170,7 +170,7 @@ At initialization, we set the prey to its maximum speed, while varying the initi
         \end{itemize}
 
         We first observe the behaviour of Signed Distance, in order to identify the best activation function. We consider sign(x), tanh(10x) and the f(x)=x to view a range of analytical properties.
-        \begin{figure}[H]
+        \begin{figure}[htbp]
           \centering
           \includegraphics[width=0.45\textwidth]{figures/signed_distance.png}
           \label{fig:trajectory}
@@ -180,18 +180,18 @@ At initialization, we set the prey to its maximum speed, while varying the initi
 
         We proceed by observing how initial conditions affect behaviour: we vary initial bearing, that is, the angle of the prey at the initialization, while fixing the predator's initial conditions. We then plot for reference both scaled and normalised plots of $(x,y)$ trajectories, showing the relative positions between prey and predator using isochrone lines. To complete the picture, we show the evolution of some relevant metrics over the run.
 
+        The presence of waves suggests the need to use more advanced methods to understand the behavior. We use the Cosine Transform to estimate the natural frequency of the waves: this technique consists in decomposing the function into the cosine waves, which is the natural method to identify the "dominant" frequencies within a periodic function.
+
         \begin{figure}[H]
           \centering
           \includegraphics[width=0.45\textwidth]{figures/initial_bearing_120.png}
           \label{fig:bear120}
         \end{figure}
 
-        The presence of waves suggests the need to use more advanced methods to understand the behavior. We use the Cosine Transform to estimate the natural frequency of the waves: this technique consists in decomposing the function into the cosine waves, which is the natural method to identify the "dominant" frequencies within a periodic function.
-
         To characterise the behaviour of the metrics in the trajectories, we use the Discrete Cosine Transform, which has a time complexity in the order of O(N*log(N)) of functions of length $N = 2^K$. As a philosophical assumption, we employ a window function to reduce the effect of initial and final behaviour in the wave, focusing on the behaviour over the run. This technique allows us to abstract from specific conditions, focusing only on the trajectory, since the cutoff is arbitrary, which leads to noise in the transformation.
 
         We plot the log-log Discrete Cosine Transform to study the results shown before: decomposing the signed distance for the previous three trajectories, we notice that the \textit{Hamming Window} performs better, producing narrower peaks, which is more aligned with the "Dirac Comb" shape predicted theoretically.
-        \begin{figure}[H]
+        \begin{figure}[htbp]
           \centering
           \includegraphics[width=0.45\textwidth]{figures/dct_120_loglog.png}
           \label{fig:dct1}
@@ -199,7 +199,7 @@ At initialization, we set the prey to its maximum speed, while varying the initi
 
         In the plot, the `thumb' shapes of the cosine decomposition, may be informally understood by observing the behaviour of the similar function, such as $t(x) := \frac{2}{1+x^4}$, taken as a single peak in the decomposition. Evaluating the antitransform and observing the positive $x>0$ values, one recognises the behaviour and general shape of a damped oscillator, which is related to the behaviour of the first trajectory.
 
-        \begin{figure}[H]
+        \begin{figure}[htbp]
           \centering
           \includegraphics[width=0.35\textwidth]{figures/f_and_cos_antitr.png}
           \label{fig:antitransform}
@@ -214,7 +214,7 @@ At initialization, we set the prey to its maximum speed, while varying the initi
 
         We also observe the presence of noise, which may be attributed to the irregularities of the signed distance: in fact, when the identity is used as activation, the noise is reduced and the decay rate - the slope of the right tail - is stronger. It is clear that more regular waves produce sharper results. This is also apparent in the following plot, which display the cosine transform of the standard distance $d(x,y) := ||x(t)-y(t)||$, a more regular wave.
 
-        \begin{figure}[H]
+        \begin{figure}[htbp]
           \centering
           \includegraphics[width=0.35\textwidth]{figures/dct_positive_0.png}
           \label{fig:loglog-positive}
@@ -248,7 +248,7 @@ At initialization, we set the prey to its maximum speed, while varying the initi
 
           For practical reasons, we impose a $t_{\text{max}}$ term, which bounds the maximum duration of the trajectory, to discard trajectories which never converge. In addition, we observed that higher $\text{N}$ values produced more sudden changes in the phase plots; we used $\text{N = 2}$ as it provided the clearest qualitative distinction between areas.
 
-          \begin{figure}[H]
+          \begin{figure}[htbp]
             \centering
             \includegraphics[width=0.45\textwidth]{figures/phase_duration_distance.png}
             \label{fig:phaseplot1}
@@ -260,7 +260,7 @@ At initialization, we set the prey to its maximum speed, while varying the initi
 
           In few words, chases are short and successful for all prey accelerations, assuming the predator has high enough speed.
 
-          \begin{figure}[H]
+          \begin{figure}[htbp]
             \centering
             \includegraphics[width=0.45\textwidth]{figures/phase_avg_dist_dot.png}
             \label{fig:phaseplot2}
@@ -270,7 +270,7 @@ At initialization, we set the prey to its maximum speed, while varying the initi
 
           Consistent with these observations, the boundary of runs that lead to a sharper final angle of attack is notable from the point of view of the rate of change of distance, which has high variability over the run. This is consistent with an expected `phase change` of the system.
 
-          \begin{figure}[H]
+          \begin{figure}[htbp]
             \centering
             \includegraphics[width=0.45\textwidth]{figures/phase_derivative_dist.png}
             \label{fig:phaseplot3}
