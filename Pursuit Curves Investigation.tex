@@ -36,14 +36,14 @@
   \begin{center}
     \begin{minipage}{0.9\textwidth}
       \begin{abstract}
-        We study a variation of the Homicidal Chauffeur Problem in $\mathbb{R}^2$, a differential game involving two agents: an agile prey and a fast predator. We set the strategy of the prey to right-angle acceleration, whereas the predator uses a Proportional Navigation (PN) strategy. We simulate the trajectories using Runge-Kutta 4 integration, leveraging the Python Numba library for computational efficiency. We analyse individual trajectories using summary statistics and Fourier decomposition via the Discrete Cosine Transform. Finally, we explore a large phase space, varying predator speed and prey acceleration and identify regions of behavior corresponding to different capture dynamics. Our results highlight distinct strategy regimes and the expressivity of summary statistics to characterize pursuit-evasion games.
+        We study a variation of the Homicidal Chauffeur Problem in $\mathbb{R}^2$, a differential game involving two agents: an agile prey and a fast predator. We set the strategy of the prey to right-angle acceleration, whereas the predator uses a Proportional Navigation (PN) strategy. We simulate the trajectories using Runge-Kutta 4 integration, leveraging the Python Numba library for computational efficiency. We analyze individual trajectories using summary statistics and Fourier decomposition via the Discrete Cosine Transform. Finally, we explore a large phase space, varying predator speed and prey acceleration and identify regions of behavior corresponding to different capture dynamics. Our results highlight distinct strategy regimes and the expressivity of summary statistics to characterize pursuit-evasion games.
       \end{abstract}
     \end{minipage}
   \end{center}
 ]
 \section{Introduction}
 {\setlength{\parskip}{0pt}
-The Homicidal Chauffeur Problem, first formulated by Rufus Isaacs in his 1951 paper "Games of Pursuit", is a classical pursuit-evasion differential game. It models the dynamics between a pursuer $P$, and an evader $E$, constrained to move in a plane. The pursuer is faster $v_2 > v_1$ but subject to a minimum turning radius, while the evader can maneuver freely. Capture is defined as the moment when the evader enters the pursuer's, with the capture time serving as the game's payoff.}
+The Homicidal Chaffeur Problem, first formulated by Rufus Isaacs in his 1951 paper "Games of Pursuit", is a classical pursuit-evasion differential game. It models the dynamics between a pursuer $P$, and an evader $E$, constrained to move in a plane. The pursuer is faster $v_2 > v_1$ but subject to a minimum turning radius, while the evader can maneuver freely. Capture is defined as the moment when the evader enters the pursuer's, with the capture time serving as the game's payoff.}
 
 The relevance of this framework extends from missile guidance to predator-prey interactions in biology. Inspired by Isaac's model, we study a 2D variant where the pursuer uses Proportional Navigation (PN) while the evader executes right-angle evasive maneuvers. Our investigation focuses on deterministic strategies and analyzes their outcomes both dynamically and through the Discrete Cosine Transform.
 
@@ -88,7 +88,7 @@ At initialization, we set the prey to its maximum speed, while varying the initi
     On a sidenote, it should be noted that the equations of motion for both prey (x) and predator (y) are defined solely by their acceleration, therefore position and velocity are actually redundant. In the simulation, we store all derivatives to compute and display the final metrics more easily.
 
     \subsubsection{Prey Behaviour}
-    In the simulation, we fully characterise the behaviour of the prey by setting its acceleration vector to the direction orthogonal to the predator-prey vector. Acceleration is only altered when the predator gets within the prey's reaction distance. As a result, acceleration is maintained until the predator returns close enough to the prey. Consequently, the prey's acceleration is always fully dependent on the relative positions of the agents during the last `near miss' event.
+    In the simulation, we fully characterize the behaviour of the prey by setting its acceleration vector to the direction orthogonal to the predator-prey vector. Acceleration is only altered when the predator gets within the prey's reaction distance. As a result, acceleration is maintained until the predator returns close enough to the prey. Consequently, the prey's acceleration is always fully dependent on the relative positions of the agents during the last `near miss' event.
 
     \[
       \begin{aligned}
@@ -130,12 +130,12 @@ At initialization, we set the prey to its maximum speed, while varying the initi
     Proportional navigation can guarantee interception of a target moving with constant velocity. However, if the target accelerates or changes direction, the mechanism may fail. The following will identify some cases where the algorithm fails, while giving an overview of methods that can be used to study the behaviour of the pursuit-evasion trajectories.
 
     \subsubsection{Integration Method}
-    We initially employed Euler integration due to its simplicity and computational efficiency. With only one function evaluation per time step, it allowed us to get straight into the analysis. However, Euler's method suffers from a local truncation error of $O(\Delta t^2)$ and a global error of $O(\Delta t^)$, making it less suitable for precise simulations.
+    We initially employed Euler integration due to its simplicity and computational efficiency. With only one function evaluation per time step, it allowed us to get straight into the analysis. However, Euler's method suffers from a local truncation error per step of $O(\Delta t^2)$ and a global error of $O(\Delta t)$, making it less suitable for precise simulations.
 
-    After further evaluation, we upgraded to the Fourth-Order Runge Kutta method (RK4). This method is more computationally demanding, evaluating the function four times every step, it offers a local error of $O(\Delta t^5)$ and a global error of $O(\Delta t^4)$. This significantly improves accuracy and numerical stability. Furthermore, the increased stability permits the use of larger time steps $(\Delta t)$, which can offset the increased per-step cost. In our case, we were able to decrease the time step by two orders of magnitude, from $\texttt{1e-4}$ to $\texttt{1e-2}$, encountering a speed up of 60 times, while still maintaining the quality of our results.
+    After further evaluation, we upgraded to the Fourth-Order Runge Kutta method (RK4). This method is more computationally demanding, evaluating the function four times every step, it offers a local error of $O(\Delta t^5)$ per step and a global error of $O(\Delta t^4)$. This significantly improves accuracy and numerical stability. Furthermore, the increased stability permits the use of larger time steps $(\Delta t)$, which can offset the increased per-step cost. In our case, we were able to decrease the time step by two orders of magnitude, from $\texttt{1e-4}$ to $\texttt{1e-2}$, encountering a speed up of 60 times, while still maintaining the quality of our results.
 
     \subsubsection{Homicidal Chauffeur Assumptions}
-    Throughout our investigation, we also impose the nonstrict inequalities of the Homicidal Chauffeur problem referenced earlier, which affect both acceleration and maximal velocities: the predator is faster, while the prey has a faster acceleration, making it more maneuvrable.
+    Throughout our investigation, we also impose the nonstrict inequalities of the Homicidal Chauffeur problem referenced earlier, which affect both acceleration and maximal velocities: the predator is faster, while the prey has a faster acceleration, making it more maneuverable.
 
     \[
       \left\{
@@ -164,8 +164,8 @@ At initialization, we set the prey to its maximum speed, while varying the initi
 
         In the investigation, we consider some relevant metrics to understanding a trajectory:
         \begin{itemize}
-          \item \underline{Signed Distance}: we model the distance between prey and predator by multiplying it with a sign representing whether the predator is left or right of the predator: we use the cross product to compute the sign, and extract the with an \textit{activation} function.
-          \item \underline{Derivative of Distance}: the rest of change of `absolute' distance is telling of how effective the predator is at reaching the prey, so we model it.
+          \item \underline{Signed Distance}: we model the distance between prey and predator by multiplying it with a sign representing whether the predator is left or right of the prey: we use the cross product to compute the sign, and tweak the influence with an \textit{activation} function.
+          \item \underline{Derivative of Distance}: the rate of change of `absolute' distance is telling of how effective the predator is at reaching the prey, so we model it.
           \item \underline{Dot product of Velocities}: the level of alignment of the prey and predator's velocity, giving to what extent they are moving parallel to each other.
         \end{itemize}
 
@@ -186,11 +186,11 @@ At initialization, we set the prey to its maximum speed, while varying the initi
           \label{fig:bear120}
         \end{figure}
 
-        The presence of waves and suggests the need to use more advanced methods to understand the behavior. We use the Cosine Transform to estimate the natural frequency of the waves: this technique consists in decomposing the function into the cosine waves, which is the natural method to identify the "dominant" frequencies within a periodic function.
+        The presence of waves suggests the need to use more advanced methods to understand the behavior. We use the Cosine Transform to estimate the natural frequency of the waves: this technique consists in decomposing the function into the cosine waves, which is the natural method to identify the "dominant" frequencies within a periodic function.
 
         To characterise the behaviour of the metrics in the trajectories, we use the Discrete Cosine Transform, which has a time complexity in the order of O(N*log(N)) of functions of length $N = 2^K$. As a philosophical assumption, we employ a window function to reduce the effect of initial and final behaviour in the wave, focusing on the behaviour over the run. This technique allows us to abstract from specific conditions, focusing only on the trajectory, since the cutoff is arbitrary, which leads to noise in the transformation.
 
-        We plot the log-log Discrete Cosine Transform to study the results shown before: decomposing the signed distance for the previous three trajectories, we notice that the \textit{Hamming Window} performs better, producing narrower peakes, which is more aligned with the "Dirac Comb" shape predicted theoretically.
+        We plot the log-log Discrete Cosine Transform to study the results shown before: decomposing the signed distance for the previous three trajectories, we notice that the \textit{Hamming Window} performs better, producing narrower peaks, which is more aligned with the "Dirac Comb" shape predicted theoretically.
         \begin{figure}[H]
           \centering
           \includegraphics[width=0.45\textwidth]{figures/dct_120_loglog.png}
@@ -214,6 +214,12 @@ At initialization, we set the prey to its maximum speed, while varying the initi
 
         We also observe the presence of noise, which may be attributed to the irregularities of the signed distance: in fact, when the identity is used as activation, the noise is reduced and the decay rate - the slope of the right tail - is stronger. It is clear that more regular waves produce sharper results. This is also apparent in the following plot, which display the cosine transform of the standard distance $d(x,y) := ||x(t)-y(t)||$, a more regular wave.
 
+        \begin{figure}[H]
+          \centering
+          \includegraphics[width=0.35\textwidth]{figures/dct_positive_0.png}
+          \label{fig:loglog-positive}
+        \end{figure}        
+
         On a final note, we conclude this section by noticing that `pure' frequency of the wave is easier to extract by only considering the distance (ie. the euclidean norm) in the space, at the cost of losing the qualitative aspect of the sign.
 
         \section{Phase Space Plots}
@@ -223,7 +229,7 @@ At initialization, we set the prey to its maximum speed, while varying the initi
 
         For matters of computational and memory efficiency, we proceed by computing the summary metrics for each trajectory at the end of each run, displaying the complete results only at the end through heatmaps.
 
-        We use the following conditions to define the runs: we use a step size of 100 to interpolate a square range of $(v^\text{max}_y, a_x)$ values, where each combination corresponds to a run. We then plot different metrics for each run.
+        We use the following conditions to define the runs: we use a resolution size of 100 x 100 to interpolate a square range of $(v^\text{max}_y, a_x)$ values, where each combination corresponds to a run. We then plot different metrics for each run.
 
         {\small
         \[
